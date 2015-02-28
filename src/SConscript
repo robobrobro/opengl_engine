@@ -1,0 +1,15 @@
+import os
+
+Import('env')
+env['CPPPATH'] = ['../include', '/usr/local/include/freetype2']
+env['FRAMEWORKS'] = ['OpenGL', 'Cocoa', 'IOKit', 'CoreVideo']
+program = env.Program(target='fps', source=Glob('*.c'), LIBS=['glfw3', 'freetype', 'ftgl'])
+env['PREFIX'] = os.path.join(Dir('#').abspath, 'bin')
+program_install = env.Install(env['PREFIX'], program)
+env.Alias('install', program_install)
+res_path = os.path.join(Dir('#').abspath, 'res')
+res_dir = Dir(res_path)
+res_install = env.Install(env['PREFIX'], res_dir)
+env.Alias('install', res_install)
+env.Clean(program, os.path.join(env['PREFIX'], 'res'))
+

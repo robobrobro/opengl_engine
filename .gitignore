@@ -1,0 +1,4 @@
+.debug*
+.scons*
+bin/
+build/
