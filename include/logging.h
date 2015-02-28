@@ -29,7 +29,7 @@ char * __timestamp(void);
         char * timestamp = __timestamp(); \
         fprintf(stderr, "(%s%s:%d:%s%s%s%s %s%s%s): " format, COLOR_DARKGRAY, __FILE__, __LINE__, COLOR_END, color1, str1, COLOR_END, color2, str2, COLOR_END, ##__VA_ARGS__); \
         __log_msg("(%s%s:%s:%d:%s%s%s%s %s%s%s): " format, COLOR_DARKGRAY, timestamp ? timestamp : "", __FILE__, __LINE__, COLOR_END, color1, str1, COLOR_END, color2, str2, COLOR_END, ##__VA_ARGS__); \
-        if ((timestamp = __timestamp())) free(timestamp); \
+        if (timestamp) free(timestamp); \
     } while (0)
 
 #define LOG_DEBUG(format, ...) LOG_MSG(COLOR_DARKCYAN, __FUNCTION__, COLOR_GRAY, "DEBUG", format, ##__VA_ARGS__)
