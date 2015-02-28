@@ -4,6 +4,8 @@
 #include "engine.h"
 #include "logging.h"
 
+static void key_callback(GLFWwindow * window, int key, int scancode, int action, int mods);
+
 int main(int argc, char ** argv)
 {
     int status = 0;
@@ -26,10 +28,17 @@ int main(int argc, char ** argv)
         return 1;
     }
 
+    LOG_DEBUG("registering key callback with engine\n");
+    if ((status = engine_register_key_callback(NULL, -1, -1, -1, -1, key_callback)) != status_success)
+    {
+        LOG_ERROR("engine_register_key_callback failed (%d)\n", status);
+        return 2;
+    }
+
     if ((status = engine_run()) != status_success)
     {
         LOG_ERROR("engine_run failed (%d)\n", status);
-        return 2;
+        return 3;
     }
 
     LOG_DEBUG("exit\n");
@@ -37,3 +46,8 @@ int main(int argc, char ** argv)
     return 0;
 }
 
+static void key_callback(GLFWwindow * window, int key, int scancode, int action, int mods)
+{
+    LOG_DEBUG("window = %p, key = %d, scancode = %d, action = %d, mods = %02x\n",
+            window,  key, scancode, action, mods);
+}
