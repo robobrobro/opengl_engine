@@ -1,5 +1,6 @@
 import os
 
+# TODO move all this into SConstruct?
 Import('env')
 env['CPPPATH'] = ['../include', '/usr/local/include/freetype2']
 env['FRAMEWORKS'] = ['OpenGL', 'Cocoa', 'IOKit', 'CoreVideo']

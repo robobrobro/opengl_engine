@@ -18,16 +18,20 @@ void log_init(void)
 {
     if (__log_initialized) return;
 
+#ifdef _DEBUG_FILENAME
+#define _STRINGIFY(x) #x
+#define _XSTRINGIFY(x) _STRINGIFY(x)
     pthread_mutex_init(&__lock, NULL);
 
     if (!__log_fp)
     {
-        __log_fp = fopen(".debug.log", "a");
+        __log_fp = fopen(_XSTRINGIFY(_DEBUG_FILENAME), "a");
         if (!__log_fp)
         {
             LOG_MSG(COLOR_DARKCYAN, __FUNCTION__, COLOR_RED, "ERROR", "failed to open the log file (%s)\n", strerror(errno));
         }
     }
+#endif
 
     atexit(__log_shutdown);
 
@@ -38,6 +42,7 @@ static void __log_shutdown(void)
 {
     if (!__log_initialized) return;
 
+#ifdef _DEBUG_FILENAME
     if (__log_fp)
     {
         if (fclose(__log_fp) != 0)
@@ -48,12 +53,14 @@ static void __log_shutdown(void)
     }
 
     pthread_mutex_destroy(&__lock);
+#endif
 
     __log_initialized = 0;
 }
 
 void __log_msg(const char * format, ...)
 {
+#ifdef _DEBUG_FILENAME
     va_list args;
 
     if (!__log_initialized) return;
@@ -65,6 +72,7 @@ void __log_msg(const char * format, ...)
     va_end(args);
 
     pthread_mutex_unlock(&__lock);
+#endif
 }
 
 char * __timestamp(void)

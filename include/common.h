@@ -13,5 +13,14 @@
 #include <FTGL/ftgl.h>
 #include <stdlib.h>
 
+typedef enum
+{
+    status_success = 0,
+    status_error,
+} status_e;
+
+void * safe_alloc(unsigned int size);
+status_e safe_free(void * buf);
+
 #endif
 
