@@ -44,6 +44,13 @@ typedef struct
     engine_mouse_scroll_cb callback;
 } __mouse_scroll_cb_ctx_t;
 static array_t __mouse_scroll_cbs;
+static engine_render_cb __render_cb; // TODO array? usefulness?
+typedef struct
+{
+    GLFWwindow * window;
+    engine_framebuffer_size_cb callback;
+} __framebuffer_size_cb_ctx_t;
+static array_t __framebuffer_size_cbs;
 
 static void __engine_shutdown(void);
 static void __error_callback(int error, const char * description);
@@ -52,6 +59,7 @@ static void __mouse_pos_callback(GLFWwindow * window, double xpos, double ypos);
 static void __mouse_enter_callback(GLFWwindow * window, int entered);
 static void __mouse_button_callback(GLFWwindow * window, int button, int action, int mods);
 static void __mouse_scroll_callback(GLFWwindow * window, double xoffset, double yoffset);
+static void __framebuffer_size_callback(GLFWwindow * window, int width, int height);
 
 status_e engine_init(engine_ctx_t * ctx)
 {
@@ -105,6 +113,12 @@ status_e engine_init(engine_ctx_t * ctx)
         return status_error;
     }
     
+    if (array_init(&__framebuffer_size_cbs) != status_success)
+    {
+        LOG_ERROR("failed to allocate memory for framebuffer size callback array\n");
+        return status_error;
+    }
+    
     LOG_DEBUG("initialized callback arrays\n");
 
     glfwSetErrorCallback(__error_callback);
@@ -147,6 +161,7 @@ static void __engine_shutdown(void)
     array_destroy_deep(&__mouse_enter_cbs);
     array_destroy_deep(&__mouse_button_cbs);
     array_destroy_deep(&__mouse_scroll_cbs);
+    array_destroy_deep(&__framebuffer_size_cbs);
     LOG_DEBUG("callback arrays destroyed\n");
 
     __ctx = NULL;
@@ -158,6 +173,8 @@ static void __engine_shutdown(void)
 
 status_e engine_run(void)
 {
+    GLint gl_major, gl_minor, gl_num_extensions, gl_num_shading_lang_vers;
+    GLuint idx = 0;
     GLFWwindow * window = NULL;
 
     if (!__ctx)
@@ -186,10 +203,37 @@ status_e engine_run(void)
     LOG_DEBUG("starting main processing loop...\n");
         
     glfwMakeContextCurrent(window);
+   
+    // TODO check GL_INVALID_*
+    glGetIntegerv(GL_MAJOR_VERSION, &gl_major);
+    glGetIntegerv(GL_MINOR_VERSION, &gl_minor);
+    LOG_DEBUG("running with OpenGL v%d.%d (%s), vendor: %s, renderer: %s\n", 
+            gl_major, gl_minor, glGetString(GL_VERSION), glGetString(GL_VENDOR), glGetString(GL_RENDERER));
+    glGetIntegerv(GL_NUM_EXTENSIONS, &gl_num_extensions);
+    if (gl_num_extensions > 0)
+    {
+        LOG_DEBUG("OpenGL extensions enabled:\n");
+        for (idx = 0; idx < gl_num_extensions; ++idx)
+        {
+            LOG_DEBUG(" -- %s\n", glGetStringi(GL_EXTENSIONS, idx));
+        }
+    }
+    LOG_DEBUG("OpenGL Shading Language (primary) version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+#ifdef GL_NUM_SHADING_LANGUAGE_VERSIONS
+    glGetIntegerv(GL_NUM_SHADING_LANGUAGE_VERSIONS, &gl_num_shading_lang_vers);
+    if (gl_num_shading_lang_vers > 0)
+    {
+        LOG_DEBUG("OpenGL shading language versions:\n");
+        for (idx = 0; idx < gl_num_shading_lang_vers; ++idx)
+        {
+            LOG_DEBUG(" -- %s\n", glGetStringi(GL_SHADING_LANGUAGE_VERSION, idx));
+        }
+    }
+#endif
 
     while (!glfwWindowShouldClose(window))
     {
-        // TODO render
+        if (__render_cb) __render_cb();
         
         glfwSwapBuffers(window);
 
@@ -328,6 +372,30 @@ static void __mouse_scroll_callback(GLFWwindow * window, double xoffset, double 
         if (ctx->callback)
         {
             ctx->callback(window, xoffset, yoffset);
+        }
+    }
+}
+
+static void __framebuffer_size_callback(GLFWwindow * window, int width, int height)
+{
+    unsigned int idx = 0;
+
+    LOG_DEBUG("window = %p, width = %d, height = %d\n", window, width, height);
+
+    for (idx = 0; idx < __framebuffer_size_cbs.len; ++idx)
+    {
+        __framebuffer_size_cb_ctx_t * ctx = array_get(&__framebuffer_size_cbs, idx);
+        if (!ctx)
+        {
+            LOG_ERROR("framebuffer size callback ctx is NULL!\n");
+            continue;
+        }
+
+        if (ctx->window != NULL && ctx->window != window) continue;
+
+        if (ctx->callback)
+        {
+            ctx->callback(window, width, height);
         }
     }
 }
@@ -478,6 +546,47 @@ status_e engine_register_mouse_scroll_callback(GLFWwindow * window, engine_mouse
     }
 
     LOG_DEBUG("ctx #%d registered:\n", __mouse_scroll_cbs.len);
+    LOG_DEBUG("ctx->window = %p, ctx->callback = %p\n", ctx->window, ctx->callback);
+
+    return status;
+}
+
+status_e engine_register_render_callback(engine_render_cb cb)
+{
+    if (!cb)
+    {
+        LOG_ERROR("callback is NULL!\n");
+        return status_error;
+    }
+
+    __render_cb = cb;
+    LOG_DEBUG("render callback = %p\n", __render_cb);
+
+    return status_success;
+}
+
+status_e engine_register_framebuffer_size_callback(GLFWwindow * window, engine_framebuffer_size_cb cb)
+{
+    status_e status = status_success;
+    __framebuffer_size_cb_ctx_t * ctx = NULL;
+
+    if (!(ctx = safe_alloc(sizeof(__framebuffer_size_cb_ctx_t))))
+    {
+        LOG_ERROR("failed to allocate memory for framebuffer size callback ctx\n");
+        return status_error;
+    }
+
+    ctx->window = window;
+    ctx->callback = cb;
+
+    if ((status = array_push(&__framebuffer_size_cbs, ctx)) != status_success)
+    {
+        LOG_ERROR("failed to push framebuffer size callback ctx onto array\n");
+        free(ctx);
+        return status_error;
+    }
+
+    LOG_DEBUG("ctx #%d registered:\n", __framebuffer_size_cbs.len);
     LOG_DEBUG("ctx->window = %p, ctx->callback = %p\n", ctx->window, ctx->callback);
 
     return status;
