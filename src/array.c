@@ -8,7 +8,6 @@ static status_e __array_destroy(array_t * a, int deep);
 
 status_e array_init(array_t * a)
 {
-
     if (!a)
     {
         LOG_ERROR("array is NULL!\n");
@@ -29,13 +28,12 @@ status_e array_init(array_t * a)
 
     if (a->capacity == 0) a->capacity = 10;
 
-    if (!(a->data = malloc(sizeof(void *) * a->capacity)))
+    if (!(a->data = calloc(a->capacity, sizeof(void *))))
     {
         LOG_ERROR("failed to allocate memory for array\n");
         return status_error;
     }
 
-    memset(a->data, 0, sizeof(void *) * a->capacity);
     a->len = 0;
     
     return status_success;
@@ -82,7 +80,6 @@ status_e array_push(array_t * a, void * elem)
 {
     status_e status = status_success;
 
-
     if ((status = __array_sanity_check(a)) != status_success)
     {
         return status;
@@ -104,7 +101,6 @@ status_e array_push(array_t * a, void * elem)
 void * array_pop(array_t * a)
 {
     void * elem = NULL;
-
 
     if (__array_sanity_check(a) != status_success) return NULL;
 
@@ -129,7 +125,6 @@ void * array_pop(array_t * a)
 
 void * array_get(const array_t * a, unsigned int idx)
 {
-
     if (__array_sanity_check(a) != status_success) 
     {
         return NULL;

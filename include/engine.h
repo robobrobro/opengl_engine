@@ -19,7 +19,7 @@ typedef void (*engine_mouse_pos_cb)(GLFWwindow * window, double xpos, double ypo
 typedef void (*engine_mouse_enter_cb)(GLFWwindow * window, int entered);
 typedef void (*engine_mouse_button_cb)(GLFWwindow * window, int button, int action, int mods);
 typedef void (*engine_mouse_scroll_cb)(GLFWwindow * window, double xoffset, double yoffset);
-typedef void (*engine_render_cb)(void);
+typedef void (*engine_render_cb)(double delta);
 typedef void (*engine_framebuffer_size_cb)(GLFWwindow * window, int width, int height);
 
 status_e engine_register_key_callback(GLFWwindow * window, int key, int scancode, int action, int mods, engine_key_cb cb);

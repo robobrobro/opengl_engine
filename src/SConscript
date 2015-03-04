@@ -4,7 +4,7 @@ import os
 Import('env')
 env['CPPPATH'] = ['../include', '/usr/local/include/freetype2']
 env['FRAMEWORKS'] = ['OpenGL', 'Cocoa', 'IOKit', 'CoreVideo']
-program = env.Program(target='fps', source=Glob('*.c'), LIBS=['glfw3', 'freetype', 'ftgl'])
+program = env.Program(target='cubeworld', source=Glob('*.c'), LIBS=['glfw3', 'freetype', 'ftgl'])
 env['PREFIX'] = os.path.join(Dir('#').abspath, 'bin')
 program_install = env.Install(env['PREFIX'], program)
 env.Alias('install', program_install)

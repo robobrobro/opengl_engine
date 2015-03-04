@@ -5,8 +5,7 @@
 void * safe_alloc(unsigned int size)
 {
     void * buf = NULL;
-
-
+    
     if (size == 0)
     {
         LOG_ERROR("size is 0\n");
@@ -20,7 +19,6 @@ void * safe_alloc(unsigned int size)
     }
 
     memset(buf, 0, size);
-
 
     return buf;
 }

@@ -1,5 +1,6 @@
 #include "array.h"
 #include "logging.h"
+#include "render.h"
 
 #include "engine.h"
 
@@ -44,13 +45,14 @@ typedef struct
     engine_mouse_scroll_cb callback;
 } __mouse_scroll_cb_ctx_t;
 static array_t __mouse_scroll_cbs;
-static engine_render_cb __render_cb; // TODO array? usefulness?
 typedef struct
 {
     GLFWwindow * window;
     engine_framebuffer_size_cb callback;
 } __framebuffer_size_cb_ctx_t;
 static array_t __framebuffer_size_cbs;
+static engine_render_cb __render_cb = NULL;
+static double __render_last_render_time = 0.0;
 
 static void __engine_shutdown(void);
 static void __error_callback(int error, const char * description);
@@ -64,14 +66,15 @@ static void __framebuffer_size_callback(GLFWwindow * window, int width, int heig
 status_e engine_init(engine_ctx_t * ctx)
 {
     int glfw_major, glfw_minor, glfw_rev;
-
-    LOG_DEBUG("initializing engine...\n");
+    status_e status = status_success;
 
     if (__engine_initialized)
     {
         LOG_ERROR("engine already initialized!\n");
         return status_error;
     }
+    
+    LOG_DEBUG("initializing engine...\n");
 
     atexit(__engine_shutdown);
 
@@ -118,6 +121,9 @@ status_e engine_init(engine_ctx_t * ctx)
         LOG_ERROR("failed to allocate memory for framebuffer size callback array\n");
         return status_error;
     }
+
+    __render_cb = NULL;
+    __render_last_render_time = 0.0;
     
     LOG_DEBUG("initialized callback arrays\n");
 
@@ -136,16 +142,28 @@ status_e engine_init(engine_ctx_t * ctx)
     glfwGetVersion(&glfw_major, &glfw_minor, &glfw_rev);
     LOG_DEBUG("running with GLFW v%d.%d.%d\n", glfw_major, glfw_minor, glfw_rev);
 
+    if ((status = render_init()) != status_success)
+    {
+        LOG_ERROR("failed to initialized renderer!\n");
+        return status;
+    }
+
     __engine_initialized = 1;
 
     LOG_DEBUG("engine initialization complete\n");
 
-    return status_success;
+    return status;
 }
 
 static void __engine_shutdown(void)
 {
     unsigned int idx = 0;
+
+    if (!__engine_initialized)
+    {
+        LOG_ERROR("engine not initialized\n");
+        return;
+    }
 
     LOG_DEBUG("shutting down...\n");
 
@@ -162,6 +180,8 @@ static void __engine_shutdown(void)
     array_destroy_deep(&__mouse_button_cbs);
     array_destroy_deep(&__mouse_scroll_cbs);
     array_destroy_deep(&__framebuffer_size_cbs);
+    __render_cb = NULL;
+    __render_last_render_time = 0.0;
     LOG_DEBUG("callback arrays destroyed\n");
 
     __ctx = NULL;
@@ -173,7 +193,7 @@ static void __engine_shutdown(void)
 
 status_e engine_run(void)
 {
-    GLint gl_major, gl_minor, gl_num_extensions, gl_num_shading_lang_vers;
+    GLint gl_major = 0, gl_minor = 0, gl_num_extensions = 0, gl_num_shading_lang_vers = 0;
     GLuint idx = 0;
     GLFWwindow * window = NULL;
 
@@ -204,7 +224,6 @@ status_e engine_run(void)
         
     glfwMakeContextCurrent(window);
    
-    // TODO check GL_INVALID_*
     glGetIntegerv(GL_MAJOR_VERSION, &gl_major);
     glGetIntegerv(GL_MINOR_VERSION, &gl_minor);
     LOG_DEBUG("running with OpenGL v%d.%d (%s), vendor: %s, renderer: %s\n", 
@@ -212,7 +231,7 @@ status_e engine_run(void)
     glGetIntegerv(GL_NUM_EXTENSIONS, &gl_num_extensions);
     if (gl_num_extensions > 0)
     {
-        LOG_DEBUG("OpenGL extensions enabled:\n");
+        LOG_DEBUG("OpenGL extensions enabled (%d):\n", gl_num_extensions);
         for (idx = 0; idx < gl_num_extensions; ++idx)
         {
             LOG_DEBUG(" -- %s\n", glGetStringi(GL_EXTENSIONS, idx));
@@ -233,7 +252,13 @@ status_e engine_run(void)
 
     while (!glfwWindowShouldClose(window))
     {
-        if (__render_cb) __render_cb();
+        if (__render_cb) 
+        {
+            __render_cb(glfwGetTime() - __render_last_render_time);
+            __render_last_render_time = glfwGetTime();
+        }
+
+        render_objects();
         
         glfwSwapBuffers(window);
 
@@ -551,20 +576,6 @@ status_e engine_register_mouse_scroll_callback(GLFWwindow * window, engine_mouse
     return status;
 }
 
-status_e engine_register_render_callback(engine_render_cb cb)
-{
-    if (!cb)
-    {
-        LOG_ERROR("callback is NULL!\n");
-        return status_error;
-    }
-
-    __render_cb = cb;
-    LOG_DEBUG("render callback = %p\n", __render_cb);
-
-    return status_success;
-}
-
 status_e engine_register_framebuffer_size_callback(GLFWwindow * window, engine_framebuffer_size_cb cb)
 {
     status_e status = status_success;
@@ -590,4 +601,17 @@ status_e engine_register_framebuffer_size_callback(GLFWwindow * window, engine_f
     LOG_DEBUG("ctx->window = %p, ctx->callback = %p\n", ctx->window, ctx->callback);
 
     return status;
+}
+
+status_e engine_register_render_callback(engine_render_cb cb)
+{
+    if (!cb)
+    {
+        LOG_ERROR("callback is NULL!\n");
+        return status_error;
+    }
+
+    __render_cb = cb;
+
+    return status_success;
 }

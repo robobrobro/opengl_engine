@@ -81,7 +81,7 @@ char * __timestamp(void)
     struct tm * tminfo;
     time_t now;
 
-    if (!(buf = malloc(sizeof(char) * 20)))
+    if (!(buf = calloc(20, sizeof(char))))
     {
         LOG_MSG(COLOR_DARKCYAN, __FUNCTION__, COLOR_RED, "ERROR", "failed to allocate memory for timestamp buf (%s)\n",
                 strerror(errno));
