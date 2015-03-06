@@ -54,6 +54,7 @@ static array_t __framebuffer_size_cbs;
 static engine_render_cb __render_cb = NULL;
 static engine_update_cb __update_cb = NULL;
 static double __last_frame_update = 0.0;
+static engine_prerun_cb __prerun_cb = NULL;
 
 static void __engine_shutdown(void);
 static void __error_callback(int error, const char * description);
@@ -125,6 +126,7 @@ status_e engine_init(engine_ctx_t * ctx)
 
     __render_cb = NULL;
     __update_cb = NULL;
+    __prerun_cb = NULL;
     __last_frame_update = 0.0;
     
     LOG_DEBUG("initialized callback arrays\n");
@@ -184,6 +186,7 @@ static void __engine_shutdown(void)
     array_destroy_deep(&__framebuffer_size_cbs);
     __render_cb = NULL;
     __update_cb = NULL;
+    __prerun_cb = NULL;
     __last_frame_update = 0.0;
     LOG_DEBUG("callback arrays destroyed\n");
 
@@ -199,6 +202,7 @@ status_e engine_run(void)
     GLint gl_major = 0, gl_minor = 0, gl_num_extensions = 0, gl_num_shading_lang_vers = 0;
     GLuint idx = 0;
     GLFWwindow * window = NULL;
+    status_e status = status_success;
 
     if (!__ctx)
     {
@@ -253,6 +257,14 @@ status_e engine_run(void)
     }
 #endif
 
+    if ((status = render_prerun()) != status_success)
+    {
+	LOG_ERROR("renderer failed (%d) to setup prerun\n", status);
+	return status;
+    }
+    
+    if (__prerun_cb) __prerun_cb();
+
     while (!glfwWindowShouldClose(window))
     {
 	double now = glfwGetTime();
@@ -261,7 +273,8 @@ status_e engine_run(void)
 
 	if (__update_cb) __update_cb(delta);
 
-        if (__render_cb) __render_cb(delta);
+	render_prerender();
+        if (__render_cb) __render_cb();
         render_objects();
         
         glfwSwapBuffers(window);
@@ -629,6 +642,19 @@ status_e engine_register_update_callback(engine_update_cb cb)
     }
 
     __update_cb = cb;
+
+    return status_success;
+}
+
+status_e engine_register_prerun_callback(engine_prerun_cb cb)
+{
+    if (!cb)
+    {
+        LOG_ERROR("callback is NULL!\n");
+        return status_error;
+    }
+
+    __prerun_cb = cb;
 
     return status_success;
 }

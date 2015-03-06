@@ -13,9 +13,12 @@ static void mouse_enter_callback(GLFWwindow * window, int entered);
 static void mouse_button_callback(GLFWwindow * window, int button, int action, int mods);
 static void mouse_scroll_callback(GLFWwindow * window, double xoffset, double yoffset);
 static void framebuffer_size_callback(GLFWwindow * window, int width, int height);
-static void render_callback(double delta);
+static void render_callback();
 static void update_callback(double delta);
-static int __add_objects_to_scene(void);
+static void setup_scene(void);
+static int setup_lighting(void);
+static int add_objects_to_scene(void);
+static void remove_objects_from_scene(void);
 static array_t __cubes;
 
 int main(int argc, char ** argv)
@@ -94,7 +97,12 @@ int main(int argc, char ** argv)
         return status;
     }
 
-    if (!__add_objects_to_scene()) return 1;
+    LOG_DEBUG("registering prerun callback with engine\n");
+    if ((status = engine_register_prerun_callback(setup_scene)) != status_success)
+    {
+        LOG_ERROR("engine_register_prerun_callback failed (%d)\n", status);
+        return status;
+    }
 
     if ((status = engine_run()) != status_success)
     {
@@ -141,11 +149,8 @@ static void framebuffer_size_callback(GLFWwindow * window, int width, int height
     LOG_DEBUG("window = %p, width = %d, height = %d\n", window, width, height);
 }
 
-static void render_callback(double delta)
+static void render_callback()
 {
-    glClearColor(0.0, 0.0, 0.0, 0.0);
-    glClear(GL_COLOR_BUFFER_BIT);
-
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 
@@ -162,17 +167,42 @@ static void update_callback(double delta)
     }
 }
 
-static void __remove_objects_from_scene(void)
+static void setup_scene(void)
 {
-    array_destroy(&__cubes);
+    if (!setup_lighting()) return;
+
+    if (!add_objects_to_scene()) return;
 }
 
-static int __add_objects_to_scene(void)
+static int setup_lighting(void)
+{
+    GLfloat mat_ambient[] = { 1.0, 1.0, 1.0, 1.0 };
+    GLfloat mat_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
+    GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+    //GLfloat mat_emission[] = { 0.1, 0.1, 0.1, 1.0 }; // makes all materials same color
+    GLfloat mat_shininess[] = { 128.0 };
+    GLfloat light0_position[] = { -1.0, 1.0, -1.0, 0.0 };
+    glShadeModel (GL_SMOOTH);
+
+    glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+    glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+    //glMaterialfv(GL_FRONT, GL_EMISSION, mat_emission);
+    glLightfv(GL_LIGHT0, GL_POSITION, light0_position); // TODO need more lights?
+
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+
+    return 1;
+}
+
+static int add_objects_to_scene(void)
 {
     srand(time(0));
 
     array_init(&__cubes);
-    atexit(__remove_objects_from_scene);
+    atexit(remove_objects_from_scene);
     for (int x = 0; x < 4; ++x)
     {
         for (int y = 0; y < 2; ++y)
@@ -201,3 +231,9 @@ static int __add_objects_to_scene(void)
 
     return 1;
 }
+
+static void remove_objects_from_scene(void)
+{
+    array_destroy(&__cubes);
+}
+

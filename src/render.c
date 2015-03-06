@@ -65,6 +65,7 @@ status_e render_init(void)
         return status_error;
     }
 
+
     __initialized = 1;
 
     LOG_DEBUG("initialization complete\n");
@@ -72,13 +73,29 @@ status_e render_init(void)
     return status_success;
 }
 
-void render_objects(void)
+status_e render_prerun(void)
 {
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_COLOR_MATERIAL);
+
+    return status_success;
+}
+
+void render_prerender()
+{
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void render_objects(void)
+{    
     glMatrixMode(GL_MODELVIEW); 
     glPushMatrix();
     glLoadIdentity();
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT, GL_LINE);
     
     glEnableClientState(GL_NORMAL_ARRAY);
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -153,6 +170,7 @@ void render_object(const render_ctx_t * ctx)
     glPushAttrib(GL_ALL_ATTRIB_BITS);
 
     glColor4fv(ctx->color);
+    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
     glTranslatef(ctx->pos[0], ctx->pos[1], ctx->pos[2]);
     glScalef(ctx->scale[0], ctx->scale[1], ctx->scale[2]);
     glRotatef(ctx->rotation_angle, ctx->rotation_vector[0], ctx->rotation_vector[1], ctx->rotation_vector[2]);

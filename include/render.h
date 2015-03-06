@@ -30,6 +30,8 @@ typedef struct
 } render_def_t;
 
 status_e render_init(void);
+status_e render_prerun(void);
+void render_prerender(void);
 void render_objects(void);
 void render_object(const render_ctx_t * ctx);
 status_e render_add_object(render_ctx_t * ctx);
