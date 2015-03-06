@@ -26,6 +26,7 @@ typedef struct
     GLfloat * vertices; 
     GLfloat * normals;
     GLsizei num_vertices;
+    GLenum vertex_mode;
 } render_def_t;
 
 status_e render_init(void);

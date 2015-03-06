@@ -19,41 +19,27 @@ static status_e __def_sanity_check(const render_def_t * def);
 //  |/      |/
 //  v2------v3
 
-// vertex coords array for glDrawArrays() =====================================
-// A cube has 6 sides and each side has 2 triangles, therefore, a cube consists
-// of 36 vertices (6 sides * 2 tris * 3 vertices = 36 vertices). And, each
-// vertex is 3 components (x,y,z) of floats, therefore, the size of vertex
-// array is 108 floats (36 * 3 = 108).
-GLfloat __cube_vertices[] = { 
-                        0.5f, 0.5f, 0.5f,  -0.5f, 0.5f, 0.5f,  -0.5f,-0.5f, 0.5f,      // v0-v1-v2 (front)
-                       -0.5f,-0.5f, 0.5f,   0.5f,-0.5f, 0.5f,   0.5f, 0.5f, 0.5f,      // v2-v3-v0
-                        0.5f, 0.5f, 0.5f,   0.5f,-0.5f, 0.5f,   0.5f,-0.5f,-0.5f,      // v0-v3-v4 (right)
-                        0.5f,-0.5f,-0.5f,   0.5f, 0.5f,-0.5f,   0.5f, 0.5f, 0.5f,      // v4-v5-v0
-                        0.5f, 0.5f, 0.5f,   0.5f, 0.5f,-0.5f,  -0.5f, 0.5f,-0.5f,      // v0-v5-v6 (top)
-                       -0.5f, 0.5f,-0.5f,  -0.5f, 0.5f, 0.5f,   0.5f, 0.5f, 0.5f,      // v6-v1-v0
-                       -0.5f, 0.5f, 0.5f,  -0.5f, 0.5f,-0.5f,  -0.5f,-0.5f,-0.5f,      // v1-v6-v7 (left)
-                       -0.5f,-0.5f,-0.5f,  -0.5f,-0.5f, 0.5f,  -0.5f, 0.5f, 0.5f,      // v7-v2-v1
-                       -0.5f,-0.5f,-0.5f,   0.5f,-0.5f,-0.5f,   0.5f,-0.5f, 0.5f,      // v7-v4-v3 (bottom)
-                        0.5f,-0.5f, 0.5f,  -0.5f,-0.5f, 0.5f,  -0.5f,-0.5f,-0.5f,      // v3-v2-v7
-                        0.5f,-0.5f,-0.5f,  -0.5f,-0.5f,-0.5f,  -0.5f, 0.5f,-0.5f,      // v4-v7-v6 (back)
-                       -0.5f, 0.5f,-0.5f,   0.5f, 0.5f,-0.5f,   0.5f,-0.5f,-0.5f,      // v6-v5-v4
-};    
+static GLfloat __cube_vertices[] = {
+    0.5f, 0.5f, 0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, // v0-v5-v6-v1 (top)
+    0.5f, -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f, // v3-v4-v7-v2 (bottom)
+    0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, // v0-v1-v2-v3 (front)
+    0.5f, 0.5f, -0.5f, -0.5f, 0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f, -0.5f, -0.5f, // v5-v6-v7-v4 (back)
+    -0.5f, 0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f, // v6-v7-v2-v1 (left)
+    0.5f, 0.5f, -0.5f, 0.5f, 0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, // v5-v0-v3-v4 (right)
+};
 
-// normal array
-GLfloat __cube_normals[]  = { 
-                        0, 0, 1,   0, 0, 1,   0, 0, 1,      // v0-v1-v2 (front)
-                        0, 0, 1,   0, 0, 1,   0, 0, 1,      // v2-v3-v0
-                        1, 0, 0,   1, 0, 0,   1, 0, 0,      // v0-v3-v4 (right)
-                        1, 0, 0,   1, 0, 0,   1, 0, 0,      // v4-v5-v0
-                        0, 1, 0,   0, 1, 0,   0, 1, 0,      // v0-v5-v6 (top)
-                        0, 1, 0,   0, 1, 0,   0, 1, 0,      // v6-v1-v0
-                       -1, 0, 0,  -1, 0, 0,  -1, 0, 0,      // v1-v6-v7 (left)
-                       -1, 0, 0,  -1, 0, 0,  -1, 0, 0,      // v7-v2-v1
-                        0,-1, 0,   0,-1, 0,   0,-1, 0,      // v7-v4-v3 (bottom)
-                        0,-1, 0,   0,-1, 0,   0,-1, 0,      // v3-v2-v7
-                        0, 0,-1,   0, 0,-1,   0, 0,-1,      // v4-v7-v6 (back)
-                        0, 0,-1,   0, 0,-1,   0, 0,-1,      // v6-v5-v4
-}; 
+static GLfloat __cube_normals[] = {
+    0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, // v0-v5-v6-v1 (top)
+    0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, // v3-v4-v7-v2 (bottom)
+    0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, // v0-v1-v2-v3 (front)
+    0, 0, -1, 0, 0, -1, 0,  0, -1, 0, 0, -1, // v5-v6-v7-v4 (back)
+    -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, // v6-v7-v2-v1 (left)
+    1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, // v5-v0-v3-v4 (right)
+};
+
+static GLint __cube_num_vertices = 24;
+static GLenum __cube_vertex_mode = GL_QUADS;
+// cube //////////////////////////////////////////////////////////////////////
 
 status_e render_init(void)
 {
@@ -92,12 +78,18 @@ void render_objects(void)
     glPushMatrix();
     glLoadIdentity();
 
-    //ARRAY_FOREACH(&__objects, ctx)
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    
+    glEnableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
     for (unsigned long idx = 0; idx < __objects.len; ++idx)
     {
-        //render_object((render_ctx_t *)ctx); 
         render_object(array_get(&__objects, idx)); 
-    }
+    }    
+
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glDisableClientState(GL_VERTEX_ARRAY);
 
     glPopMatrix();
 }
@@ -106,6 +98,7 @@ void render_object(const render_ctx_t * ctx)
 {
     GLfloat * normals = NULL, * vertices = NULL;
     GLsizei num_vertices = 0;
+    GLenum vertex_mode = GL_TRIANGLES;
 
     if (__ctx_sanity_check(ctx) != status_success) return;
 
@@ -114,7 +107,8 @@ void render_object(const render_ctx_t * ctx)
         case render_object_cube:
             normals = __cube_normals;
             vertices = __cube_vertices;
-            num_vertices = 36;
+            num_vertices = __cube_num_vertices;
+	    vertex_mode = __cube_vertex_mode;
             break;
         default:
             break;
@@ -128,6 +122,7 @@ void render_object(const render_ctx_t * ctx)
             normals = def->normals;
             vertices = def->vertices;
             num_vertices = def->num_vertices;
+	    vertex_mode = def->vertex_mode;
             break;
         }
     }
@@ -146,17 +141,9 @@ void render_object(const render_ctx_t * ctx)
 
     if (num_vertices == 0)
     {
-        LOG_ERROR("num vertices is 0!\n");
+
         return;
     }
-
-    // TODO more efficient to render all the objects at once, so
-    // add func like render_add_object(ctx) where ctx has normals, vertices and num_verts
-    // with another func allowing user to specify pre-defined objects render_add_object(ctx, type)
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    
-    glEnableClientState(GL_NORMAL_ARRAY);
-    glEnableClientState(GL_VERTEX_ARRAY);
 
     glNormalPointer(GL_FLOAT, 0, normals);
     glVertexPointer(3, GL_FLOAT, 0, vertices);
@@ -170,13 +157,10 @@ void render_object(const render_ctx_t * ctx)
     glScalef(ctx->scale[0], ctx->scale[1], ctx->scale[2]);
     glRotatef(ctx->rotation_angle, ctx->rotation_vector[0], ctx->rotation_vector[1], ctx->rotation_vector[2]);
 
-    glDrawArrays(GL_TRIANGLES, 0, num_vertices);
+    glDrawArrays(vertex_mode, 0, num_vertices);
 
     glPopAttrib();
     glPopMatrix();
-
-    glDisableClientState(GL_NORMAL_ARRAY);
-    glDisableClientState(GL_VERTEX_ARRAY);
 }
 
 status_e render_add_object(render_ctx_t * ctx)
@@ -192,9 +176,7 @@ status_e render_remove_object(render_ctx_t * ctx)
     status_e status = __ctx_sanity_check(ctx);
     if (status != status_success) return status;
 
-    // TODO not implemented
-
-    return status;
+    return array_remove(&__objects, ctx);
 }
 
 status_e render_add_def(render_def_t * def)
@@ -210,9 +192,7 @@ status_e render_remove_def(render_def_t * def)
     status_e status = __def_sanity_check(def);
     if (status != status_success) return status;
 
-    // TODO
-
-    return status;
+    return array_remove(&__defs, def);
 }
 
 static void __render_shutdown(void)

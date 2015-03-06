@@ -53,7 +53,6 @@ static status_e __array_destroy(array_t * a, int deep)
 {
     unsigned int idx = 0;
 
-
     __array_sanity_check(a);
 
     if (!a || !a->data) return status_error;
@@ -143,7 +142,6 @@ status_e array_set(array_t * a, unsigned int idx, void * elem)
 {
     status_e status = status_success;
 
-
     if ((status = __array_sanity_check(a)) != status_success)
     {
         return status;
@@ -158,6 +156,36 @@ status_e array_set(array_t * a, unsigned int idx, void * elem)
     a->data[idx] = elem;
 
     return status;
+}
+
+status_e array_remove(array_t * a, void * elem)
+{
+    status_e status = status_success;
+    unsigned int idx = 0, jdx = 0;
+
+    if ((status = __array_sanity_check(a)) != status_success)
+    {
+        return status;
+    }
+
+    for (idx = 0; idx < a->len; ++idx)
+    {
+	if (elem == array_get(a, idx))
+	{
+	    for (jdx = idx + 1; jdx < a->len; ++jdx)
+	    {
+		array_set(a, jdx - 1, array_get(a, jdx));
+	    }
+	    
+	    array_pop(a);
+	    LOG_DEBUG("removed elem %p from array %p\n", elem, a);
+	    return status_success;
+	}
+    }
+
+    LOG_ERROR("unable to find elem (%p) in array %p!\n", elem, a);
+
+    return status_error;
 }
 
 static status_e __array_sanity_check(const array_t * a)
@@ -187,7 +215,6 @@ static status_e __array_resize(array_t * a, unsigned int size)
 {
     status_e status = status_success;
     unsigned int idx = 0;
-
 
     if ((status = __array_sanity_check(a)) != status_success)
     {

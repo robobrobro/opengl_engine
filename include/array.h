@@ -17,5 +17,6 @@ void * array_get(const array_t * a, unsigned int idx);
 status_e array_set(array_t * a, unsigned int idx, void * elem);
 status_e array_push(array_t * a, void * elem);
 void * array_pop(array_t * a);
+status_e array_remove(array_t * a, void * elem);
 
 #endif  // __ARRAY_H__

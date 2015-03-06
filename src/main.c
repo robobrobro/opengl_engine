@@ -141,10 +141,10 @@ static void render_callback(double delta)
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 
-    gluPerspective(45, 1.333, 0.01, 100);
+    gluPerspective(45, 1.333, 0.01, 100); // deprecated but multi-platform and functional
 
     // TODO update thread?
-    // TODO rotate cube
+    // rotate cubes
     for (unsigned long idx = 0; idx < __cubes.len; ++idx)
     {
         render_ctx_t * ctx = (render_ctx_t *) array_get(&__cubes, idx);
