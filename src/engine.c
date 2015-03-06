@@ -52,7 +52,8 @@ typedef struct
 } __framebuffer_size_cb_ctx_t;
 static array_t __framebuffer_size_cbs;
 static engine_render_cb __render_cb = NULL;
-static double __render_last_render_time = 0.0;
+static engine_update_cb __update_cb = NULL;
+static double __last_frame_update = 0.0;
 
 static void __engine_shutdown(void);
 static void __error_callback(int error, const char * description);
@@ -123,7 +124,8 @@ status_e engine_init(engine_ctx_t * ctx)
     }
 
     __render_cb = NULL;
-    __render_last_render_time = 0.0;
+    __update_cb = NULL;
+    __last_frame_update = 0.0;
     
     LOG_DEBUG("initialized callback arrays\n");
 
@@ -181,7 +183,8 @@ static void __engine_shutdown(void)
     array_destroy_deep(&__mouse_scroll_cbs);
     array_destroy_deep(&__framebuffer_size_cbs);
     __render_cb = NULL;
-    __render_last_render_time = 0.0;
+    __update_cb = NULL;
+    __last_frame_update = 0.0;
     LOG_DEBUG("callback arrays destroyed\n");
 
     __ctx = NULL;
@@ -252,12 +255,13 @@ status_e engine_run(void)
 
     while (!glfwWindowShouldClose(window))
     {
-        if (__render_cb) 
-        {
-            __render_cb(glfwGetTime() - __render_last_render_time);
-            __render_last_render_time = glfwGetTime();
-        }
+	double now = glfwGetTime();
+	double delta = now - __last_frame_update;
+	__last_frame_update = now;
 
+	if (__update_cb) __update_cb(delta);
+
+        if (__render_cb) __render_cb(delta);
         render_objects();
         
         glfwSwapBuffers(window);
@@ -612,6 +616,19 @@ status_e engine_register_render_callback(engine_render_cb cb)
     }
 
     __render_cb = cb;
+
+    return status_success;
+}
+
+status_e engine_register_update_callback(engine_update_cb cb)
+{
+    if (!cb)
+    {
+        LOG_ERROR("callback is NULL!\n");
+        return status_error;
+    }
+
+    __update_cb = cb;
 
     return status_success;
 }

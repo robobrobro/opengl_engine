@@ -14,6 +14,7 @@ static void mouse_button_callback(GLFWwindow * window, int button, int action, i
 static void mouse_scroll_callback(GLFWwindow * window, double xoffset, double yoffset);
 static void framebuffer_size_callback(GLFWwindow * window, int width, int height);
 static void render_callback(double delta);
+static void update_callback(double delta);
 static int __add_objects_to_scene(void);
 static array_t __cubes;
 
@@ -86,6 +87,13 @@ int main(int argc, char ** argv)
         return status;
     }
 
+    LOG_DEBUG("registering update callback with engine\n");
+    if ((status = engine_register_update_callback(update_callback)) != status_success)
+    {
+        LOG_ERROR("engine_register_update_callback failed (%d)\n", status);
+        return status;
+    }
+
     if (!__add_objects_to_scene()) return 1;
 
     if ((status = engine_run()) != status_success)
@@ -142,8 +150,10 @@ static void render_callback(double delta)
     glLoadIdentity();
 
     gluPerspective(45, 1.333, 0.01, 100); // deprecated but multi-platform and functional
+}
 
-    // TODO update thread?
+static void update_callback(double delta)
+{
     // rotate cubes
     for (unsigned long idx = 0; idx < __cubes.len; ++idx)
     {
