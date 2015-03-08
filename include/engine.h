@@ -31,6 +31,7 @@ status_e engine_register_mouse_button_callback(GLFWwindow * window, int button, 
 status_e engine_register_mouse_scroll_callback(GLFWwindow * window, engine_mouse_scroll_cb cb);
 status_e engine_register_framebuffer_size_callback(GLFWwindow * window, engine_framebuffer_size_cb cb);
 status_e engine_register_render_callback(engine_render_cb cb);
+status_e engine_register_postrender_callback(engine_render_cb cb);
 status_e engine_register_update_callback(engine_update_cb cb);
 status_e engine_register_prerun_callback(engine_prerun_cb cb);
 

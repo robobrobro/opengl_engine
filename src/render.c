@@ -75,8 +75,8 @@ status_e render_init(void)
 
 status_e render_prerun(void)
 {
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
+    //glEnable(GL_CULL_FACE);
+    //glCullFace(GL_BACK);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_COLOR_MATERIAL);
 
@@ -93,10 +93,8 @@ void render_objects(void)
 {    
     glMatrixMode(GL_MODELVIEW); 
     glPushMatrix();
-    glLoadIdentity();
+    //glLoadIdentity();
 
-    glPolygonMode(GL_FRONT, GL_LINE);
-    
     glEnableClientState(GL_NORMAL_ARRAY);
     glEnableClientState(GL_VERTEX_ARRAY);
 
@@ -158,15 +156,17 @@ void render_object(const render_ctx_t * ctx)
 
     if (num_vertices == 0)
     {
-
+        LOG_ERROR("there are no vertices!\n");
         return;
     }
 
+    glPolygonMode(GL_FRONT_AND_BACK, ctx->polygon_mode);
+    
     glNormalPointer(GL_FLOAT, 0, normals);
     glVertexPointer(3, GL_FLOAT, 0, vertices);
 
     glPushMatrix();
-    glLoadIdentity();
+    //glLoadIdentity();
     glPushAttrib(GL_ALL_ATTRIB_BITS);
 
     glColor4fv(ctx->color);

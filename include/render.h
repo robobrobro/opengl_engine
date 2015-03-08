@@ -18,6 +18,7 @@ typedef struct
     GLfloat rotation_vector[3];
     render_object_e object_type;    // pre-defined object type whose def to use
     unsigned long def_id;           // points to the associated render def
+    GLenum polygon_mode;
 } render_ctx_t;
 
 typedef struct

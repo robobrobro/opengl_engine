@@ -52,6 +52,7 @@ typedef struct
 } __framebuffer_size_cb_ctx_t;
 static array_t __framebuffer_size_cbs;
 static engine_render_cb __render_cb = NULL;
+static engine_render_cb __postrender_cb = NULL;
 static engine_update_cb __update_cb = NULL;
 static double __last_frame_update = 0.0;
 static engine_prerun_cb __prerun_cb = NULL;
@@ -125,6 +126,7 @@ status_e engine_init(engine_ctx_t * ctx)
     }
 
     __render_cb = NULL;
+    __postrender_cb = NULL;
     __update_cb = NULL;
     __prerun_cb = NULL;
     __last_frame_update = 0.0;
@@ -185,6 +187,7 @@ static void __engine_shutdown(void)
     array_destroy_deep(&__mouse_scroll_cbs);
     array_destroy_deep(&__framebuffer_size_cbs);
     __render_cb = NULL;
+    __postrender_cb = NULL;
     __update_cb = NULL;
     __prerun_cb = NULL;
     __last_frame_update = 0.0;
@@ -276,6 +279,7 @@ status_e engine_run(void)
 	render_prerender();
         if (__render_cb) __render_cb();
         render_objects();
+	if (__postrender_cb) __postrender_cb();
         
         glfwSwapBuffers(window);
 
@@ -629,6 +633,19 @@ status_e engine_register_render_callback(engine_render_cb cb)
     }
 
     __render_cb = cb;
+
+    return status_success;
+}
+
+status_e engine_register_postrender_callback(engine_render_cb cb)
+{
+    if (!cb)
+    {
+        LOG_ERROR("callback is NULL!\n");
+        return status_error;
+    }
+
+    __postrender_cb = cb;
 
     return status_success;
 }
